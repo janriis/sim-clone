@@ -19,7 +19,6 @@ export function fireCoverage(state: GameState, x: number, y: number): number {
 function destroyBuilding(state: GameState, buildingId: number): void {
   const b = state.buildings[buildingId];
   if (!b) return;
-  const wasPlant = b.kind === 'service' && b.service === 'power';
   for (let dy = 0; dy < b.h; dy++) {
     for (let dx = 0; dx < b.w; dx++) {
       const t = state.tiles[idx(b.x + dx, b.y + dy)];
@@ -31,7 +30,9 @@ function destroyBuilding(state: GameState, buildingId: number): void {
   delete state.buildings[buildingId];
   state.dirty.meshes = true;
   state.dirty.fields = true;
-  if (wasPlant) state.dirty.power = true;
+  // any lost building changes the conduction graph (rubble doesn't conduct),
+  // and a lost plant/pump changes supply itself; water re-runs after power
+  state.dirty.power = true;
 }
 
 /** Runs every tick while anything is burning: decay timers, spread to neighbors. */

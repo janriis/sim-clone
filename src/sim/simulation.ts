@@ -7,6 +7,7 @@ import { checkMilestones, rollMonthlyEvents, tickFire, tickRubble } from './even
 import { tickGrowth } from './growth';
 import { recomputeFields } from './landvalue';
 import { recomputePower } from './power';
+import { recomputeWater } from './water';
 
 /**
  * One tick = one game day. Returns notable events for the UI to toast.
@@ -19,6 +20,11 @@ export function tick(state: GameState): GameEvent[] {
   if (state.dirty.power) {
     recomputePower(state);
     state.dirty.power = false;
+    state.dirty.water = true; // pump operation depends on power
+  }
+  if (state.dirty.water) {
+    recomputeWater(state);
+    state.dirty.water = false;
   }
   if (state.dirty.access) {
     recomputeRoadAccess(state);

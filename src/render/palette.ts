@@ -43,6 +43,11 @@ export const PALETTE = {
   fireAccent: 0xf1faee,
   park: 0x74c69d,
   parkAccent: 0x40916c,
+  pump: 0x468faf,
+  pumpAccent: 0xa9d6e5,
+  wirePole: 0x8d7b68,
+  wireInsulator: 0xe8e6df,
+  wireCable: 0x4a4e57,
   school: 0xf4a261,
   schoolAccent: 0xfff3e0,
 

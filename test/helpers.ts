@@ -1,7 +1,7 @@
 import { createNewGame } from '../src/core/state';
 import { idx } from '../src/core/grid';
 import type { GameState, ZoneType } from '../src/core/types';
-import { buildRoad, paintZone, placeService } from '../src/sim/actions';
+import { buildRoad, bulldoze, paintZone, placeService } from '../src/sim/actions';
 import { tick } from '../src/sim/simulation';
 
 /** A fresh game with a deterministic seed and all-grass terrain (no water lakes in the middle). */
@@ -30,6 +30,9 @@ export function buildStarterTown(state: GameState, zone: ZoneType | 'mixed' = 'm
   for (let x = 10; x <= 38; x++) road.push([x, 14]);
   buildRoad(state, road);
   placeService(state, 10, 12, 'power'); // 2x2, bottom edge touches the road spine at y=14
+  placeService(state, 12, 13, 'pump'); // powered via road; supplies the town with water
+  placeService(state, 13, 13, 'pump');
+  placeService(state, 12, 12, 'pump');
 
   const north: Array<[number, number]> = [];
   const south: Array<[number, number]> = [];
@@ -51,16 +54,15 @@ export function run(state: GameState, ticks: number): void {
 }
 
 /**
- * Run the sim like a minimal player: if fire razes the power plant, rebuild it
- * at a spot touching the starter town's road spine (y=14) so it conducts.
+ * Run the sim like a minimal player: if fire razes the power plant, clear the
+ * original site (touching the road spine at y=14, so it conducts) and rebuild.
  */
 export function runWithCaretaker(state: GameState, ticks: number): void {
-  const spots: Array<[number, number]> = [
+  const site: Array<[number, number]> = [
     [10, 12],
-    [12, 12],
-    [16, 12],
-    [20, 12],
-    [24, 12],
+    [11, 12],
+    [10, 13],
+    [11, 13],
   ];
   for (let i = 0; i < ticks; i++) {
     tick(state);
@@ -68,10 +70,9 @@ export function runWithCaretaker(state: GameState, ticks: number): void {
       const hasPlant = Object.values(state.buildings).some(
         (b) => b.kind === 'service' && b.service === 'power',
       );
-      if (!hasPlant && state.money > 3000) {
-        for (const [x, y] of spots) {
-          if (placeService(state, x, y, 'power').ok) break;
-        }
+      if (!hasPlant && state.money > 3100) {
+        bulldoze(state, site); // clears rubble or whatever grew there
+        placeService(state, 10, 12, 'power');
       }
     }
   }

@@ -81,13 +81,20 @@ export class BuildingsMesh {
       if (burning) push('flame', cx, cz, 0, 1 + j * 0.4);
     }
 
-    // --- tiles: trees, rubble, stray flames ---
+    // --- tiles: trees, power lines, rubble, stray flames ---
+    const hasWire = (x: number, y: number): boolean =>
+      x >= 0 && y >= 0 && x < state.size && y < state.size && state.tiles[idx(x, y)].wire;
     for (let y = 0; y < state.size; y++) {
       for (let x = 0; x < state.size; x++) {
         const t = state.tiles[idx(x, y)];
         const cx = x + 0.5;
         const cz = y + 0.5;
         if (t.tree) push('tree', cx, cz, Math.floor(hash2(x, y) * 4), 0.8 + hash2(y, x) * 0.5, 0.35);
+        if (t.wire) {
+          // crossarm faces along the run: E/W neighbors -> keep, else rotate 90°
+          const eastWest = hasWire(x - 1, y) || hasWire(x + 1, y);
+          push('wire', cx, cz, eastWest ? 0 : 1, 1);
+        }
         if (t.rubble > 0) push('rubble', cx, cz, Math.floor(hash2(x, y) * 4), 1);
         if (t.fire > 0 && t.buildingId === 0) push('flame', cx, cz, 0, 0.8);
       }

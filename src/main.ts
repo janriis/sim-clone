@@ -16,6 +16,7 @@ import { Toasts } from './ui/toasts';
 import { Inspector } from './ui/inspect';
 import { BudgetPanel } from './ui/budgetPanel';
 import { InputController } from './ui/input';
+import { isFootprintConnected } from './sim/actions';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const hudRoot = document.getElementById('hud') as HTMLElement;
@@ -50,9 +51,26 @@ const input = new InputController(canvas, rig.camera, state, overlays, {
     inspector.show(tile);
     inspector.update(state);
   },
-  onAction: (ok, reason) => {
+  onAction: (ok, reason, tool, tile) => {
     if (!ok && reason && reason !== 'Nowhere to build' && reason !== 'Nothing to zone') {
       toasts.show({ kind: 'bad', title: 'Cannot build', detail: reason });
+      return;
+    }
+    // warn about electrically isolated plants/pumps right away
+    if (ok && tile && (tool === 'power' || tool === 'pump')) {
+      if (!isFootprintConnected(state, tile[0], tile[1], tool)) {
+        toasts.show({
+          kind: 'bad',
+          title: tool === 'power' ? 'Plant not connected' : 'Pump not connected',
+          detail: 'Nothing conductive touches it — run power lines (L) or build next to a road or zone.',
+        });
+      } else if (tool === 'pump') {
+        toasts.show({
+          kind: 'info',
+          title: 'Water pump online soon',
+          detail: 'Pumps need electricity. Next to open water they supply twice as many buildings.',
+        });
+      }
     }
   },
 });
@@ -85,7 +103,7 @@ hudRoot.appendChild(corner);
 const hint = document.createElement('div');
 hint.className = 'hint';
 hint.textContent =
-  'Drag: build/zone · Right-drag: pan · Wheel: zoom · Q/E: rotate · 0-3: speed · Esc: inspect tool';
+  'Drag: build/zone · Right-drag: pan · Wheel: zoom · Q/E: rotate · 0-3: speed · L: power line · U: pump · Esc: inspect';
 hudRoot.appendChild(hint);
 
 // speed hotkeys

@@ -166,6 +166,14 @@ function buildService(service: ServiceType): THREE.BufferGeometry {
       b.box(0.24, 0.72, 0.24, -0.2, 0, -0.16, PALETTE.fireStation); // hose tower
       b.box(0.28, 0.06, 0.28, -0.2, 0.72, -0.16, PALETTE.fireAccent);
       break;
+    case 'pump':
+      // compact waterworks: blue tank + intake pipe + valve wheel
+      b.box(0.5, 0.42, 0.5, -0.08, 0, 0, PALETTE.pump);
+      b.box(0.54, 0.06, 0.54, -0.08, 0.42, 0, PALETTE.pumpAccent);
+      b.box(0.14, 0.6, 0.14, 0.26, 0, 0.22, PALETTE.pumpAccent); // standpipe
+      b.box(0.22, 0.08, 0.22, 0.26, 0.6, 0.22, PALETTE.pump);
+      b.box(0.34, 0.12, 0.16, 0.16, 0, -0.26, PALETTE.indChimney); // intake pipe
+      break;
     case 'park':
       b.box(0.9, 0.04, 0.9, 0, 0, 0, PALETTE.park); // lawn
       b.box(0.16, 0.3, 0.16, -0.2, 0.04, -0.2, PALETTE.treeTrunk);
@@ -203,6 +211,17 @@ function buildRubble(): THREE.BufferGeometry {
   return b.build();
 }
 
+function buildWirePole(): THREE.BufferGeometry {
+  const b = new Builder();
+  b.box(0.07, 0.72, 0.07, 0, 0, 0, PALETTE.wirePole); // pole
+  b.box(0.5, 0.05, 0.07, 0, 0.6, 0, PALETTE.wirePole); // crossarm
+  b.box(0.05, 0.07, 0.05, -0.19, 0.65, 0, PALETTE.wireInsulator);
+  b.box(0.05, 0.07, 0.05, 0.19, 0.65, 0, PALETTE.wireInsulator);
+  // sagging cable approximated by a thin low bar spanning the tile
+  b.box(1.0, 0.025, 0.025, 0, 0.56, 0, PALETTE.wireCable);
+  return b.build();
+}
+
 function buildTree(): THREE.BufferGeometry {
   const b = new Builder();
   b.box(0.1, 0.22, 0.1, 0, 0, 0, PALETTE.treeTrunk);
@@ -228,11 +247,12 @@ export function buildArchetypes(): Map<string, THREE.BufferGeometry> {
       map.set(`ind-${level}-${v}`, buildInd(level, v));
     }
   }
-  const services: ServiceType[] = ['power', 'police', 'fire', 'park', 'school'];
+  const services: ServiceType[] = ['power', 'pump', 'police', 'fire', 'park', 'school'];
   for (const s of services) map.set(`service-${s}`, buildService(s));
   map.set('husk', buildHusk());
   map.set('rubble', buildRubble());
   map.set('tree', buildTree());
   map.set('flame', buildFlame());
+  map.set('wire', buildWirePole());
   return map;
 }

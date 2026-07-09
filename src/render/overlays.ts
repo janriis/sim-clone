@@ -19,6 +19,7 @@ export class Overlays {
   private hover: THREE.Mesh;
   private ghost: THREE.InstancedMesh;
   private noPower: THREE.InstancedMesh;
+  private noWater: THREE.InstancedMesh;
   private noPowerPhase = 0;
 
   constructor() {
@@ -90,6 +91,16 @@ export class Overlays {
     this.noPower.count = 0;
     this.noPower.frustumCulled = false;
     this.group.add(this.noPower);
+
+    // "no water" drop: floating blue diamond (offset so both can show at once)
+    this.noWater = new THREE.InstancedMesh(
+      bolt.clone(),
+      new THREE.MeshBasicMaterial({ color: PALETTE.pumpAccent }),
+      2048,
+    );
+    this.noWater.count = 0;
+    this.noWater.frustumCulled = false;
+    this.group.add(this.noWater);
   }
 
   /** Rebuild zone tint instances (cheap; called when meshes are dirty). */
@@ -144,22 +155,31 @@ export class Overlays {
     this.ghost.count = 0;
   }
 
-  /** Bob the no-power bolts; rebuild their placement when meshes change. */
+  /** Bob the supply-problem markers (⚡ unpowered, 💧 unwatered) over live buildings. */
   updateNoPower(state: GameState, dt: number): void {
     this.noPowerPhase += dt * 2.4;
     const bob = 0.08 * Math.sin(this.noPowerPhase);
     const m = new THREE.Matrix4();
-    let i = 0;
+    let np = 0;
+    let nw = 0;
     for (const id in state.buildings) {
       const b = state.buildings[id];
       if (b.abandoned) continue;
-      if (state.tiles[idx(b.x, b.y)].powered) continue;
-      if (i >= 2048) break;
+      const t = state.tiles[idx(b.x, b.y)];
       const h = b.kind === 'service' ? 1.5 : 0.6 + b.level * 0.45;
-      m.makeTranslation(b.x + b.w / 2, h + bob, b.y + b.h / 2);
-      this.noPower.setMatrixAt(i++, m);
+      if (!t.powered && np < 2048) {
+        m.makeTranslation(b.x + b.w / 2 - 0.12, h + bob, b.y + b.h / 2);
+        this.noPower.setMatrixAt(np++, m);
+      }
+      // pumps/parks don't need water; zone buildings and staffed services do
+      if (b.kind === 'zone' && !t.watered && nw < 2048) {
+        m.makeTranslation(b.x + b.w / 2 + 0.16, h + 0.06 - bob, b.y + b.h / 2);
+        this.noWater.setMatrixAt(nw++, m);
+      }
     }
-    this.noPower.count = i;
+    this.noPower.count = np;
     this.noPower.instanceMatrix.needsUpdate = true;
+    this.noWater.count = nw;
+    this.noWater.instanceMatrix.needsUpdate = true;
   }
 }

@@ -16,18 +16,26 @@ npm run dev      # open http://localhost:5173
 ## How to play
 
 1. **Roads first** — drag with the Road tool (`T`). Everything needs road access.
-2. **Power** — place a power plant (`P`) touching a road or zone. Power conducts
-   through roads, zones, and buildings; each plant powers ~60 buildings.
-3. **Zone** — paint Residential (`R`), Commercial (`C`), and Industrial (`I`)
+2. **Power** — place a power plant (`P`) and connect it: power conducts through
+   roads, zones, buildings, and **power lines** (`L` — pylons that can even cross
+   water). An unconnected plant warns you immediately. Each plant powers ~60
+   buildings; outgrow it and the farthest buildings go dark (⚡ markers).
+3. **Water** — place water pumps (`U`) next to a road; pumps need electricity to
+   run and supply far more buildings when standing beside open water. Water flows
+   through the pipes implied under roads, zones, and buildings. Dry buildings (💧)
+   hold half the people, never level up, and slowly decay.
+4. **Zone** — paint Residential (`R`), Commercial (`C`), and Industrial (`I`)
    rectangles next to roads. Buildings grow on their own when demand (the RCI bars),
    power, and road access line up.
-4. **Services** — fire stations suppress fires, parks and schools raise land value
+5. **Services** — fire stations suppress fires, parks and schools raise land value
    (which drives buildings to level up into denser ones), police help too.
    Keep industry away from homes — pollution tanks residential land value.
-5. **Budget** — 💰 opens the tax panel. 9% is neutral; higher rates fill the
-   treasury but choke demand. Roads and services cost monthly maintenance.
-6. **Survive events** — fires spread building-to-building (roads are firebreaks),
+6. **Budget** — 💰 opens the tax panel. 9% is neutral; higher rates fill the
+   treasury but choke demand. Roads, power lines, and services cost monthly
+   maintenance.
+7. **Survive events** — fires spread building-to-building (roads are firebreaks),
    booms and recessions swing demand, and population milestones pay out grants.
+   A burned power plant blacks out the city — and dead pumps stop the water.
 
 ### Controls
 
@@ -38,6 +46,7 @@ npm run dev      # open http://localhost:5173
 | Mouse wheel | zoom |
 | `Q` / `E` | rotate 90° |
 | `0`–`3`, `Space` | game speed / pause |
+| `L` / `U` | power line / water pump |
 | `Esc` | back to inspect tool |
 
 The game autosaves monthly and on tab close. **🌱 New city** starts over.

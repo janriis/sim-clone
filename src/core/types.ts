@@ -6,7 +6,7 @@ export const ZONE_COM = 2;
 export const ZONE_IND = 3;
 export type ZoneType = typeof ZONE_NONE | typeof ZONE_RES | typeof ZONE_COM | typeof ZONE_IND;
 
-export type ServiceType = 'power' | 'police' | 'fire' | 'park' | 'school';
+export type ServiceType = 'power' | 'police' | 'fire' | 'park' | 'school' | 'pump';
 
 export type Terrain = 'grass' | 'water';
 
@@ -15,11 +15,13 @@ export interface Tile {
   elevation: number; // 0..1, visual + small land value bonus
   zone: ZoneType;
   road: boolean;
+  wire: boolean; // power line — conducts electricity, nothing else
   buildingId: number; // 0 = none
   tree: boolean; // decorative, cleared by any construction
   rubble: number; // days of rubble remaining after a fire (0 = none)
   // derived caches, recomputed by sim:
   powered: boolean;
+  watered: boolean;
   roadAccess: boolean;
   landValue: number; // 0..100
   pollution: number; // 0..100
@@ -60,6 +62,7 @@ export interface Demand {
 
 export interface DirtyFlags {
   power: boolean;
+  water: boolean;
   access: boolean;
   fields: boolean;
   meshes: boolean;
@@ -90,10 +93,12 @@ export interface GameState {
 export type Tool =
   | 'select'
   | 'road'
+  | 'wire'
   | 'zone-res'
   | 'zone-com'
   | 'zone-ind'
   | 'power'
+  | 'pump'
   | 'police'
   | 'fire'
   | 'park'
@@ -107,5 +112,5 @@ export interface GameEvent {
 }
 
 export function allDirty(): DirtyFlags {
-  return { power: true, access: true, fields: true, meshes: true, roads: true };
+  return { power: true, water: true, access: true, fields: true, meshes: true, roads: true };
 }

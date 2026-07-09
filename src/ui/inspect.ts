@@ -6,10 +6,13 @@ import {
   type GameState,
 } from '../core/types';
 import { capacityOf } from '../sim/growth';
+import { pumpCapacity } from '../sim/water';
+import { POWER_PER_PLANT } from '../config';
 
 const ZONE_NAMES = ['Unzoned', 'Residential', 'Commercial', 'Industrial'];
 const SERVICE_NAMES: Record<string, string> = {
   power: 'Power plant',
+  pump: 'Water pump',
   police: 'Police station',
   fire: 'Fire station',
   park: 'Park',
@@ -62,11 +65,20 @@ export class Inspector {
       rows.push(['Terrain', 'Water']);
     } else if (t.road) {
       rows.push(['Type', 'Road']);
+    } else if (t.wire) {
+      rows.push(['Type', 'Power line']);
+      rows.push(['Energized', t.powered ? 'Yes' : 'No']);
     } else {
       rows.push(['Zone', ZONE_NAMES[t.zone]]);
       if (b) {
         if (b.kind === 'service') {
           rows.push(['Building', SERVICE_NAMES[b.service ?? ''] ?? '—']);
+          if (b.service === 'power') {
+            rows.push(['Supplies', `${POWER_PER_PLANT} buildings`]);
+          } else if (b.service === 'pump') {
+            rows.push(['Supplies', `${pumpCapacity(state, b)} buildings`]);
+            rows.push(['Running', t.powered ? 'Yes' : 'No — needs power ⚡']);
+          }
         } else {
           const kind =
             b.zone === ZONE_RES ? 'Homes' : b.zone === ZONE_COM ? 'Shops' : 'Factory';
@@ -80,6 +92,7 @@ export class Inspector {
         }
       }
       rows.push(['Powered', t.powered ? 'Yes' : 'No ⚡']);
+      rows.push(['Water', t.watered ? 'Yes' : 'No 💧']);
       rows.push(['Road access', t.roadAccess ? 'Yes' : 'No']);
       rows.push(['Land value', `${Math.round(t.landValue)}`]);
       rows.push(['Pollution', `${Math.round(t.pollution)}`]);

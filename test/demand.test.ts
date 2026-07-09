@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeDemand } from '../src/sim/demand';
-import { buildStarterTown, run, testGame } from './helpers';
+import { buildStarterTown, run, runWithCaretaker, testGame } from './helpers';
 
 describe('RCI demand', () => {
   it('an empty city wants residents and industry', () => {
@@ -28,7 +28,7 @@ describe('RCI demand', () => {
   it('a growing city eventually balances jobs and population', () => {
     const state = testGame();
     buildStarterTown(state);
-    run(state, 1200); // ~3.3 game years
+    runWithCaretaker(state, 1200); // ~3.3 game years
     expect(state.population).toBeGreaterThan(50);
     expect(state.jobs).toBeGreaterThan(20);
   });

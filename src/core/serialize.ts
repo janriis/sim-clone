@@ -12,6 +12,7 @@ interface SaveFile {
   elevation: number[];
   zone: number[];
   road: number[];
+  wire?: number[]; // optional: older saves predate power lines
   buildingId: number[];
   tree: number[];
   rubble: number[];
@@ -39,6 +40,7 @@ export function serialize(state: GameState): string {
     elevation: new Array(n),
     zone: new Array(n),
     road: new Array(n),
+    wire: new Array(n),
     buildingId: new Array(n),
     tree: new Array(n),
     rubble: new Array(n),
@@ -59,6 +61,7 @@ export function serialize(state: GameState): string {
     save.elevation[i] = Math.round(t.elevation * 1000) / 1000;
     save.zone[i] = t.zone;
     save.road[i] = t.road ? 1 : 0;
+    save.wire![i] = t.wire ? 1 : 0;
     save.buildingId[i] = t.buildingId;
     save.tree[i] = t.tree ? 1 : 0;
     save.rubble[i] = t.rubble;
@@ -84,12 +87,14 @@ export function deserialize(json: string): GameState | null {
       elevation: save.elevation[i],
       zone: save.zone[i] as Tile['zone'],
       road: save.road[i] === 1,
+      wire: save.wire?.[i] === 1,
       buildingId: save.buildingId[i],
       tree: save.tree[i] === 1,
       rubble: save.rubble[i],
       fire: save.fire[i],
       // derived caches recomputed via dirty flags on load:
       powered: false,
+      watered: false,
       roadAccess: false,
       landValue: 0,
       pollution: 0,

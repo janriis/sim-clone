@@ -41,12 +41,38 @@ export function buildRoad(state: GameState, tilesXY: Array<[number, number]>): A
   for (const [x, y] of buildable) {
     const t = state.tiles[idx(x, y)];
     t.road = true;
+    t.wire = false; // roads carry power themselves; the line is absorbed
     t.zone = ZONE_NONE;
     t.tree = false;
   }
   state.money -= cost;
   state.dirty.roads = true;
   state.dirty.access = true;
+  state.dirty.power = true;
+  return { ok: true, cost };
+}
+
+export function canBuildWireAt(state: GameState, x: number, y: number): boolean {
+  if (!inBounds(x, y)) return false;
+  const t = state.tiles[idx(x, y)];
+  // pylons may stand in water; roads/zones/buildings already conduct
+  return !t.road && t.buildingId === 0 && t.rubble === 0 && !t.wire && t.zone === ZONE_NONE;
+}
+
+export function buildWire(state: GameState, tilesXY: Array<[number, number]>): ActionResult {
+  const buildable = tilesXY.filter(([x, y]) => canBuildWireAt(state, x, y));
+  if (buildable.length === 0) return fail('Nowhere to build');
+  const cost = buildable.length * COST.wire;
+  const broke = canAfford(state, cost);
+  if (broke) return broke;
+
+  for (const [x, y] of buildable) {
+    const t = state.tiles[idx(x, y)];
+    t.wire = true;
+    t.tree = false;
+  }
+  state.money -= cost;
+  state.dirty.meshes = true;
   state.dirty.power = true;
   return { ok: true, cost };
 }
@@ -73,6 +99,7 @@ export function paintZone(
   for (const [x, y] of paintable) {
     const t = state.tiles[idx(x, y)];
     t.zone = zone;
+    t.wire = false; // zoned land conducts on its own
     t.tree = false;
   }
   state.money -= cost;
@@ -135,6 +162,7 @@ export function placeService(
       const t = state.tiles[idx(x + dx, y + dy)];
       t.buildingId = b.id;
       t.zone = ZONE_NONE;
+      t.wire = false;
       t.tree = false;
     }
   }
@@ -145,6 +173,35 @@ export function placeService(
   return { ok: true, cost };
 }
 
+/**
+ * Does the footprint at (x,y) touch anything that conducts power?
+ * Used to warn about freshly placed plants/pumps that are electrically isolated.
+ */
+export function isFootprintConnected(
+  state: GameState,
+  x: number,
+  y: number,
+  service: ServiceType,
+): boolean {
+  const s = serviceFootprint(service);
+  for (let dy = -1; dy <= s; dy++) {
+    for (let dx = -1; dx <= s; dx++) {
+      const inside = dx >= 0 && dx < s && dy >= 0 && dy < s;
+      // perimeter ring only (4-adjacency: skip diagonal corners)
+      const onEdge = (dx === -1 || dx === s) !== (dy === -1 || dy === s);
+      if (inside || !onEdge) continue;
+      const nx = x + dx;
+      const ny = y + dy;
+      if (!inBounds(nx, ny)) continue;
+      const t = state.tiles[idx(nx, ny)];
+      if (t.road || t.wire || t.zone !== ZONE_NONE || (t.buildingId !== 0 && t.buildingId !== state.tiles[idx(x, y)].buildingId)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 export function bulldoze(state: GameState, tilesXY: Array<[number, number]>): ActionResult {
   let cleared = 0;
   const clearedBuildings = new Set<number>();
@@ -153,7 +210,7 @@ export function bulldoze(state: GameState, tilesXY: Array<[number, number]>): Ac
   for (const [x, y] of tilesXY) {
     if (!inBounds(x, y)) continue;
     const t = state.tiles[idx(x, y)];
-    if (t.road || t.zone !== ZONE_NONE || t.tree || t.rubble > 0) cleared++;
+    if (t.road || t.wire || t.zone !== ZONE_NONE || t.tree || t.rubble > 0) cleared++;
     if (t.buildingId !== 0) clearedBuildings.add(t.buildingId);
   }
   if (cleared === 0 && clearedBuildings.size === 0) return fail('Nothing to demolish');
@@ -166,6 +223,7 @@ export function bulldoze(state: GameState, tilesXY: Array<[number, number]>): Ac
     const t = state.tiles[idx(x, y)];
     if (t.road) state.dirty.roads = true;
     t.road = false;
+    t.wire = false;
     t.zone = ZONE_NONE;
     t.tree = false;
     t.rubble = 0;

@@ -56,8 +56,9 @@ export function recomputePower(state: GameState): void {
       const ni = idx(nx, ny);
       if (visited[ni]) return;
       const nt = state.tiles[ni];
-      const conducts = nt.road || nt.buildingId !== 0 || nt.zone !== ZONE_NONE;
-      if (!conducts || nt.terrain === 'water') return;
+      const conducts = nt.road || nt.wire || nt.buildingId !== 0 || nt.zone !== ZONE_NONE;
+      // wires may cross water (pylons); everything else needs land
+      if (!conducts || (nt.terrain === 'water' && !nt.wire)) return;
       visited[ni] = 1;
       queue.push(ni);
     });

@@ -12,12 +12,14 @@ interface ToolDef {
 const TOOLS: Array<ToolDef | 'divider'> = [
   { tool: 'select', icon: '🔍', label: 'Inspect', key: 'X' },
   { tool: 'road', icon: '🛣️', label: 'Road', price: COST.road, key: 'T' },
+  { tool: 'wire', icon: '🔌', label: 'Power line', price: COST.wire, key: 'L' },
   'divider',
   { tool: 'zone-res', icon: '🏠', label: 'Residential', price: COST.zone, key: 'R' },
   { tool: 'zone-com', icon: '🏬', label: 'Commercial', price: COST.zone, key: 'C' },
   { tool: 'zone-ind', icon: '🏭', label: 'Industrial', price: COST.zone, key: 'I' },
   'divider',
   { tool: 'power', icon: '⚡', label: 'Power plant', price: COST.power, key: 'P' },
+  { tool: 'pump', icon: '🚰', label: 'Water pump', price: COST.pump, key: 'U' },
   { tool: 'police', icon: '🚓', label: 'Police', price: COST.police },
   { tool: 'fire', icon: '🚒', label: 'Fire station', price: COST.fire, key: 'F' },
   { tool: 'park', icon: '🌳', label: 'Park', price: COST.park },
@@ -76,10 +78,12 @@ export class Toolbar {
       const byKey: Record<string, Tool> = {
         KeyX: 'select',
         KeyT: 'road',
+        KeyL: 'wire',
         KeyR: 'zone-res',
         KeyC: 'zone-com',
         KeyI: 'zone-ind',
         KeyP: 'power',
+        KeyU: 'pump',
         KeyF: 'fire',
         KeyB: 'bulldoze',
       };

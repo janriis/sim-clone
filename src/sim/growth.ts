@@ -109,6 +109,7 @@ function updateBuildings(state: GameState): void {
     // --- condition score ---
     let score = 0;
     score += t.powered ? 1 : -4;
+    score += t.watered ? 1 : -1; // thirst hurts, but slower than a blackout
     score += t.roadAccess ? 1 : -4;
     score += demand > 0 ? 1 : -1;
     if (t.landValue > 40) score += 1;
@@ -125,9 +126,10 @@ function updateBuildings(state: GameState): void {
       continue;
     }
 
-    // --- level up ---
+    // --- level up (dense buildings need running water) ---
     if (
       b.level < 3 &&
+      t.watered &&
       b.condition > GROWTH.levelUpMinCondition &&
       demand > GROWTH.levelUpMinDemand &&
       t.landValue > GROWTH.levelUpLandValuePerLevel * b.level &&
@@ -138,8 +140,9 @@ function updateBuildings(state: GameState): void {
       state.dirty.fields = true; // industry pollution scales with level
     }
 
-    // --- occupancy drift ---
-    const cap = b.condition < 30 ? 0 : capacityOf(b);
+    // --- occupancy drift (no water halves how many people/jobs fit) ---
+    let cap = b.condition < 30 ? 0 : capacityOf(b);
+    if (!t.watered) cap = Math.floor(cap / 2);
     if (b.zone === ZONE_RES) {
       b.population += (cap - b.population) * GROWTH.occupancyDrift;
       if (b.population < 0.5 && cap === 0) b.population = 0;

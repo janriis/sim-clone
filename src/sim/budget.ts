@@ -31,8 +31,12 @@ export function applyBudget(state: GameState, events: GameEvent[]): BudgetReport
   }
 
   let roadTiles = 0;
-  for (const t of state.tiles) if (t.road) roadTiles++;
-  const roadCost = roadTiles * MAINTENANCE.roadPerTile;
+  let wireTiles = 0;
+  for (const t of state.tiles) {
+    if (t.road) roadTiles++;
+    if (t.wire) wireTiles++;
+  }
+  const roadCost = roadTiles * MAINTENANCE.roadPerTile + wireTiles * MAINTENANCE.wirePerTile;
 
   const net = income - roadCost - serviceCost;
   const wasSolvent = state.money >= 0;

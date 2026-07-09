@@ -11,8 +11,10 @@ export const START_YEAR = 2000;
 export const STARTING_MONEY = 20_000;
 export const COST = {
   road: 10,
+  wire: 2,
   zone: 5, // per tile painted
   power: 3_000,
+  pump: 300,
   police: 500,
   fire: 500,
   park: 150,
@@ -22,7 +24,9 @@ export const COST = {
 
 export const MAINTENANCE = {
   roadPerTile: 1,
+  wirePerTile: 0.2,
   power: 150,
+  pump: 40,
   police: 60,
   fire: 60,
   park: 8,
@@ -60,6 +64,10 @@ export const CAPACITY = { res: 8, com: 6, ind: 10 } as const;
 // --- infrastructure ---
 export const POWER_PER_PLANT = 60; // buildings powered per plant
 export const ROAD_ACCESS_DIST = 3;
+// water: pumps must be powered to run; pipes are implied under roads/zones/buildings
+export const WATER_PER_PUMP = 30; // buildings supplied per inland pump...
+export const WATER_PER_PUMP_FRESH = 70; // ...or per pump adjacent to open water
+// effects of missing water: capacity halved, level-ups blocked, slow condition drain (growth.ts)
 
 // --- fields (recomputed every FIELD_INTERVAL ticks) ---
 export const FIELD_INTERVAL = 10;
@@ -111,6 +119,7 @@ export const MILESTONE_GRANT_PER_POP = 2;
 // --- service footprints (w x h tiles) ---
 export const SERVICE_SIZE = {
   power: 2,
+  pump: 1,
   police: 1,
   fire: 1,
   park: 1,

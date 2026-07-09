@@ -101,8 +101,13 @@ export class BudgetPanel {
       }
     }
     let roads = 0;
-    for (const t of state.tiles) if (t.road) roads++;
-    const expense = serviceCost + roads * MAINTENANCE.roadPerTile;
+    let wires = 0;
+    for (const t of state.tiles) {
+      if (t.road) roads++;
+      if (t.wire) wires++;
+    }
+    const expense =
+      serviceCost + roads * MAINTENANCE.roadPerTile + wires * MAINTENANCE.wirePerTile;
     const net = income - expense;
     this.incomeEl.textContent = `§${Math.round(income).toLocaleString()}`;
     this.expenseEl.textContent = `§${Math.round(expense).toLocaleString()}`;

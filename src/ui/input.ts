@@ -4,8 +4,10 @@ import { ZONE_COM, ZONE_IND, ZONE_RES } from '../core/types';
 import { inBounds } from '../core/grid';
 import {
   buildRoad,
+  buildWire,
   bulldoze,
   canBuildRoadAt,
+  canBuildWireAt,
   canPlaceServiceAt,
   canZoneAt,
   paintZone,
@@ -17,7 +19,7 @@ import type { Overlays } from '../render/overlays';
 export interface InputCallbacks {
   getTool(): Tool;
   onInspect(tile: [number, number]): void;
-  onAction(ok: boolean, reason?: string): void;
+  onAction(ok: boolean, reason?: string, tool?: Tool, tile?: [number, number]): void;
 }
 
 const ZONE_OF_TOOL: Partial<Record<Tool, ZoneType>> = {
@@ -26,7 +28,8 @@ const ZONE_OF_TOOL: Partial<Record<Tool, ZoneType>> = {
   'zone-ind': ZONE_IND,
 };
 
-const SERVICE_TOOLS: Tool[] = ['power', 'police', 'fire', 'park', 'school'];
+const SERVICE_TOOLS: Tool[] = ['power', 'pump', 'police', 'fire', 'park', 'school'];
+const LINE_TOOLS: Tool[] = ['road', 'wire']; // drag an L-shaped path
 
 /**
  * Pointer -> tile picking via ray ∩ y=0 plane (O(1), no mesh raycasting).
@@ -120,10 +123,10 @@ export class InputController {
     const tool = this.cb.getTool();
     if (SERVICE_TOOLS.includes(tool)) return this.footprintTiles(tool as ServiceType, tile);
     if (this.dragStart) {
-      if (tool === 'road') return this.roadPath(this.dragStart, tile);
+      if (LINE_TOOLS.includes(tool)) return this.roadPath(this.dragStart, tile);
       if (tool in ZONE_OF_TOOL || tool === 'bulldoze') return this.rect(this.dragStart, tile);
     }
-    if (tool === 'road' || tool in ZONE_OF_TOOL || tool === 'bulldoze') return [tile];
+    if (LINE_TOOLS.includes(tool) || tool in ZONE_OF_TOOL || tool === 'bulldoze') return [tile];
     return [];
   }
 
@@ -139,6 +142,7 @@ export class InputController {
     return tiles.map(([x, y]) => {
       let ok = true;
       if (tool === 'road') ok = canBuildRoadAt(this.state, x, y);
+      else if (tool === 'wire') ok = canBuildWireAt(this.state, x, y);
       else if (tool in ZONE_OF_TOOL) ok = canZoneAt(this.state, x, y);
       else if (tool === 'bulldoze') ok = inBounds(x, y);
       return { x, y, ok };
@@ -183,7 +187,7 @@ export class InputController {
     if (SERVICE_TOOLS.includes(tool)) {
       if (tile) {
         const r = placeService(this.state, tile[0], tile[1], tool as ServiceType);
-        this.cb.onAction(r.ok, r.reason);
+        this.cb.onAction(r.ok, r.reason, tool, tile);
       }
       this.refreshGhost();
       return;
@@ -198,6 +202,8 @@ export class InputController {
     let reason: string | undefined;
     if (tool === 'road') {
       ({ ok, reason } = buildRoad(this.state, tiles));
+    } else if (tool === 'wire') {
+      ({ ok, reason } = buildWire(this.state, tiles));
     } else if (tool in ZONE_OF_TOOL) {
       ({ ok, reason } = paintZone(this.state, tiles, ZONE_OF_TOOL[tool]!));
     } else if (tool === 'bulldoze') {
