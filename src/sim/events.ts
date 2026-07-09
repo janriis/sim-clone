@@ -91,10 +91,15 @@ export function tickRubble(state: GameState): void {
 }
 
 function igniteRandomBuilding(state: GameState, events: GameEvent[]): void {
+  // Weighted pick: homes/shops/factories catch fire far more often than civic
+  // buildings, so a fledgling town doesn't lose its only power plant to bad luck.
   const candidates: number[] = [];
   for (let i = 0; i < state.tiles.length; i++) {
     const t = state.tiles[i];
-    if (t.buildingId !== 0 && t.fire === 0) candidates.push(i);
+    if (t.buildingId === 0 || t.fire !== 0) continue;
+    const b = state.buildings[t.buildingId];
+    const weight = b?.kind === 'zone' ? EVENTS.zoneIgnitionWeight : EVENTS.serviceIgnitionWeight;
+    for (let w = 0; w < weight; w++) candidates.push(i);
   }
   if (candidates.length === 0) return;
   const i = candidates[pickInt(state, candidates.length)];
@@ -121,8 +126,15 @@ export function rollMonthlyEvents(state: GameState, events: GameEvent[]): void {
     state.modifier = null;
   }
 
+  // Fire risk scales with city size and spares brand-new towns entirely.
+  const buildingCount = Object.keys(state.buildings).length;
+  const fireChance =
+    state.day < EVENTS.fireGraceMonths * DAYS_PER_MONTH
+      ? 0
+      : Math.min(EVENTS.fireChance, buildingCount * EVENTS.firePerBuilding);
+
   const roll = nextFloat(state);
-  if (roll < EVENTS.fireChance) {
+  if (roll < fireChance) {
     igniteRandomBuilding(state, events);
   } else if (state.modifier === null) {
     if (roll < EVENTS.fireChance + EVENTS.boomChance) {

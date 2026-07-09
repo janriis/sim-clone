@@ -105,7 +105,11 @@ export const FIRE = {
 
 // --- events (rolled monthly) ---
 export const EVENTS = {
-  fireChance: 0.08,
+  fireChance: 0.08, // ceiling for big cities
+  firePerBuilding: 0.004, // effective chance = min(fireChance, buildings * this)
+  fireGraceMonths: 6, // no random fires while the town is finding its feet
+  serviceIgnitionWeight: 1, // zone buildings are 4x more likely to catch fire
+  zoneIgnitionWeight: 4,
   boomChance: 0.04,
   recessionChance: 0.04,
   boomMult: 1.6,

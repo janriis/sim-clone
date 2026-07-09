@@ -4,7 +4,8 @@
       "Bash(npx tsx *)",
       "Bash(npx tsc *)",
       "Bash(node drive.cjs)",
-      "Bash(git reset *)"
+      "Bash(git reset *)",
+      "Bash(node drive4.cjs)"
     ]
   }
 }

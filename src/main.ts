@@ -10,6 +10,7 @@ import { createTerrainMesh } from './render/terrainMesh';
 import { RoadsMesh } from './render/roadsMesh';
 import { BuildingsMesh } from './render/buildingsMesh';
 import { Overlays } from './render/overlays';
+import { Effects } from './render/effects';
 import { Hud } from './ui/hud';
 import { Toolbar } from './ui/toolbar';
 import { Toasts } from './ui/toasts';
@@ -34,6 +35,8 @@ const buildings = new BuildingsMesh();
 rig.scene.add(buildings.group);
 const overlays = new Overlays();
 rig.scene.add(overlays.group);
+const effects = new Effects();
+rig.scene.add(effects.group);
 
 // --- UI ---
 const toasts = new Toasts(hudRoot);
@@ -94,6 +97,8 @@ newBtn.addEventListener('click', () => {
   input.setState(state);
   inspector.hide();
   budgetPanel.sync(state);
+  buildings.reset();
+  effects.reset();
   rebuildAll();
 });
 corner.append(budgetBtn, newBtn);
@@ -115,7 +120,7 @@ window.addEventListener('keydown', (e) => {
 
 function rebuildAll(): void {
   roads.rebuild(state);
-  buildings.rebuild(state);
+  buildings.update(state, 0, true);
   overlays.rebuildZones(state);
   state.dirty.meshes = false;
   state.dirty.roads = false;
@@ -156,15 +161,17 @@ function frame(now: number): void {
   }
 
   // renderer reads state; rebuilds only when the sim marked something dirty
-  if (state.dirty.meshes) {
-    buildings.rebuild(state);
+  const meshesDirty = state.dirty.meshes;
+  if (meshesDirty) {
     overlays.rebuildZones(state);
     state.dirty.meshes = false;
   }
+  buildings.update(state, dt, meshesDirty);
   if (state.dirty.roads) {
     roads.rebuild(state);
     state.dirty.roads = false;
   }
+  effects.update(state, state.speed === 0 ? 0 : dt); // world life freezes on pause
   overlays.updateNoPower(state, dt);
 
   controls.update(dt);

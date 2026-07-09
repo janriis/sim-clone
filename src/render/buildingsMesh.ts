@@ -5,14 +5,27 @@ import { hash2 } from '../core/rng';
 import { ZONE_COM, ZONE_RES, type GameState } from '../core/types';
 import { buildArchetypes } from './buildingFactory';
 
+const POP_DURATION = 0.45; // seconds of spawn/level-up bounce
+
+/** easeOutBack mapped 0->1 with a playful overshoot around q≈0.7 */
+function popScale(q: number): number {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  const t = q - 1;
+  return 1 + c3 * t * t * t + c1 * t * t;
+}
+
 /**
  * One InstancedMesh per archetype. On `dirty.meshes` the whole set of instance
  * matrices is rebuilt in one pass over the tiles (<1ms at 64x64) — simpler and
- * safer than incremental patching. Idle frames upload nothing.
+ * safer than incremental patching. Idle frames upload nothing, except while a
+ * spawn/level-up "pop" animation briefly forces per-frame rebuilds.
  */
 export class BuildingsMesh {
   readonly group = new THREE.Group();
   private meshes = new Map<string, THREE.InstancedMesh>();
+  private knownLevels = new Map<number, number>(); // building id -> last seen level
+  private anims = new Map<number, number>(); // building id -> seconds since pop began
 
   constructor() {
     const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
@@ -26,6 +39,41 @@ export class BuildingsMesh {
       this.meshes.set(key, mesh);
       this.group.add(mesh);
     }
+  }
+
+  reset(): void {
+    this.knownLevels.clear();
+    this.anims.clear();
+  }
+
+  /**
+   * Call every frame. Rebuilds instance buffers when the sim marked meshes
+   * dirty, and keeps rebuilding while any pop animation is in flight.
+   */
+  update(state: GameState, dt: number, dirty: boolean): void {
+    for (const [id, t] of this.anims) {
+      const nt = t + dt;
+      if (nt >= POP_DURATION) this.anims.delete(id);
+      else this.anims.set(id, nt);
+    }
+    if (dirty) {
+      for (const idStr in state.buildings) {
+        const b = state.buildings[idStr];
+        const prev = this.knownLevels.get(b.id);
+        if ((prev === undefined || prev < b.level) && !b.abandoned) this.anims.set(b.id, 0);
+      }
+      this.knownLevels.clear();
+      for (const idStr in state.buildings) {
+        const b = state.buildings[idStr];
+        this.knownLevels.set(b.id, b.level);
+      }
+    }
+    if (dirty || this.anims.size > 0) this.rebuild(state);
+  }
+
+  private popOf(id: number): number {
+    const t = this.anims.get(id);
+    return t === undefined ? 1 : popScale(Math.min(1, t / POP_DURATION));
   }
 
   rebuild(state: GameState): void {
@@ -65,20 +113,19 @@ export class BuildingsMesh {
       const j = hash2(b.x, b.y);
       const rot = Math.floor(j * 4);
 
+      const pop = this.popOf(b.id); // spawn/level-up bounce multiplier
       if (b.kind === 'service') {
-        push(`service-${b.service}`, cx, cz, rot, b.w); // 2x2 archetypes are authored at ~1.6 scale via footprint
+        push(`service-${b.service}`, cx, cz, rot, b.w * pop); // 2x2 archetypes scale via footprint
         continue;
       }
-      const burning = state.tiles[idx(b.x, b.y)].fire > 0;
       if (b.abandoned) {
         push('husk', cx, cz, rot, 1);
       } else {
         const variant = Math.floor(j * 3);
         const zoneKey = b.zone === ZONE_RES ? 'res' : b.zone === ZONE_COM ? 'com' : 'ind';
         const s = 0.92 + hash2(b.x * 7, b.y * 13) * 0.16; // subtle size jitter
-        push(`${zoneKey}-${b.level}-${variant}`, cx, cz, rot, s);
+        push(`${zoneKey}-${b.level}-${variant}`, cx, cz, rot, s * pop);
       }
-      if (burning) push('flame', cx, cz, 0, 1 + j * 0.4);
     }
 
     // --- tiles: trees, power lines, rubble, stray flames ---
@@ -96,7 +143,7 @@ export class BuildingsMesh {
           push('wire', cx, cz, eastWest ? 0 : 1, 1);
         }
         if (t.rubble > 0) push('rubble', cx, cz, Math.floor(hash2(x, y) * 4), 1);
-        if (t.fire > 0 && t.buildingId === 0) push('flame', cx, cz, 0, 0.8);
+        // flames live in the Effects layer now — they flicker per frame
       }
     }
 

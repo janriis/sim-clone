@@ -230,7 +230,7 @@ function buildTree(): THREE.BufferGeometry {
   return b.build();
 }
 
-function buildFlame(): THREE.BufferGeometry {
+export function buildFlame(): THREE.BufferGeometry {
   const b = new Builder();
   b.box(0.34, 0.5, 0.34, 0, 0, 0, PALETTE.fire);
   b.box(0.18, 0.34, 0.18, 0.06, 0.5, 0.04, PALETTE.fireCore);

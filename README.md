@@ -67,5 +67,10 @@ npm run build      # production build to dist/
 - `src/render/` — orthographic isometric renderer. One `InstancedMesh` per
   procedural building archetype; instance buffers rebuild only when the sim
   raises a dirty flag, so idle frames upload nothing.
+- `src/render/effects.ts` — the purely visual life layer: cars driving the road
+  network (one per ~12 residents, right-hand traffic), chimney smoke from
+  industry and power plants, flickering fires, and a spring-loaded "pop" when
+  buildings appear or level up. Freezes when the game is paused; never touches
+  sim state.
 - `src/ui/` — plain DOM/CSS HUD: toolbar, RCI meters, inspector, budget panel, toasts.
 - `src/config.ts` — every cost, rate, radius, and probability. Balance lives here.
